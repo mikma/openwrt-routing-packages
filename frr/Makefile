@@ -19,6 +19,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_frr-zebra \
 	CONFIG_PACKAGE_frr-libfrr \
 	CONFIG_PACKAGE_frr-bgpd \
+	CONFIG_PACKAGE_frr-eigrpd \
 	CONFIG_PACKAGE_frr-ldpd \
 	CONFIG_PACKAGE_frr-isisd \
 	CONFIG_PACKAGE_frr-nhrpd \
@@ -93,6 +94,12 @@ define Package/frr-bgpd
   TITLE:=BGPv4, BGPv4+, BGPv4- routing engine
 endef
 
+define Package/frr-eigrpd
+  $(call Package/frr/Default)
+  DEPENDS+=+frr-libfrr
+  TITLE:=EIGRP routing engine
+endef
+
 define Package/frr-ldpd
   $(call Package/frr/Default)
   DEPENDS+=+frr-libfrr @BROKEN
@@ -155,6 +162,10 @@ define Package/frr-bgpd/conffiles
 /etc/frr/bgpd.conf
 endef
 
+define Package/frr-eigrpd/conffiles
+/etc/frr/eigrpd.conf
+endef
+
 define Package/frr-isisd/conffiles
 /etc/frr/isisd.conf
 endef
@@ -192,6 +203,7 @@ CONFIG_PACKAGE_frr-libfrr:=m
 CONFIG_PACKAGE_frr-watchfrr:=m
 CONFIG_PACKAGE_frr-zebra:=m
 CONFIG_PACKAGE_frr-bgpd:=m
+CONFIG_PACKAGE_frr-eigrpd:=m
 CONFIG_PACKAGE_frr-isisd:=m
 CONFIG_PACKAGE_frr-ldpd:=m
 CONFIG_PACKAGE_frr-nhrpd:=m
@@ -241,6 +253,7 @@ CONFIGURE_ARGS+= \
 	--with-host-tools=$(STAGING_DIR_HOSTPKG)/lib/$(PKG_NAME)-$(PKG_VERSION)/ \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-libfrr,zebra) \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-bgpd,bgpd) \
+	$(call autoconf_bool,CONFIG_PACKAGE_frr-eigrpd,eigrpd) \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-ldpd,ldpd) \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-isisd,isisd) \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-nhrpd,nhrpd) \
@@ -282,6 +295,14 @@ define Package/frr-bgpd/install
 	$(INSTALL_DIR) $(1)/etc/frr
 	chmod 0750 $(1)/etc/frr
 	$(INSTALL_CONF) ./files/frr.conf $(1)/etc/frr/bgpd.conf
+endef
+
+define Package/frr-eigrpd/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/eigrpd $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/frr
+	chmod 0750 $(1)/etc/frr
+	$(INSTALL_CONF) ./files/frr.conf $(1)/etc/frr/eigrpd.conf
 endef
 
 define Package/frr-isisd/install
@@ -377,6 +398,7 @@ $(eval $(call BuildPackage,frr-libfrr))
 $(eval $(call BuildPackage,frr-watchfrr))
 $(eval $(call BuildPackage,frr-zebra))
 $(eval $(call BuildPackage,frr-bgpd))
+$(eval $(call BuildPackage,frr-eigrpd))
 $(eval $(call BuildPackage,frr-isisd))
 $(eval $(call BuildPackage,frr-ldpd))
 $(eval $(call BuildPackage,frr-nhrpd))
