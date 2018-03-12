@@ -1,0 +1,92 @@
+diff --git a/configure.ac b/configure.ac
+index 0d6c99a..a36bf50 100755
+--- a/configure.ac
++++ b/configure.ac
+@@ -25,35 +25,12 @@ dnl -----------------------------------
+ AC_CANONICAL_BUILD()
+ AC_CANONICAL_HOST()
+ 
+-AS_IF([test "$host" != "$build"], [
+-  if test "$srcdir" = "."; then
+-    AC_MSG_ERROR([cross-compilation is only possible with builddir separate from srcdir.  create a separate directory and run as .../path-to-frr/configure.])
+-  fi
+-  test -d hosttools || mkdir hosttools
+-  abssrc="`cd \"${srcdir}\"; pwd`"
+-
+-  AC_MSG_NOTICE([...])
+-  AC_MSG_NOTICE([... cross-compilation: creating hosttools directory and self-configuring for build platform tools])
+-  AC_MSG_NOTICE([... use HOST_CPPFLAGS / HOST_CFLAGS / HOST_LDFLAGS if neccessary])
+-  AC_MSG_NOTICE([...])
+-
+-  ( CPPFLAGS="$HOST_CPPFLAGS"; \
+-    CFLAGS="$HOST_CFLAGS"; \
+-    LDFLAGS="$HOST_LDFLAGS"; \
+-    cd hosttools; "${abssrc}/configure" "--host=$build" "--build=$build" "--enable-clippy-only" "--disable-nhrpd" "--disable-vtysh"; )
+-
+-  AC_MSG_NOTICE([...])
+-  AC_MSG_NOTICE([... cross-compilation: finished self-configuring for build platform tools])
+-  AC_MSG_NOTICE([...])
+-
+-  build_clippy="false"
+-  HOSTTOOLS="hosttools/"
+-], [
+-  build_clippy="true"
+-  HOSTTOOLS=""
+-])
++HOSTTOOLS=""
++AC_ARG_WITH(host-tools,
++        AS_HELP_STRING([--with-host-tools=DIR], [Path to directory with lib/clippy]),
++        [HOSTTOOLS=$withval],)
+ AC_SUBST(HOSTTOOLS)
+-AM_CONDITIONAL([BUILD_CLIPPY], [$build_clippy])
++AM_CONDITIONAL([BUILD_CLIPPY], [test "$HOSTTOOLS" = ""])
+ 
+ # Disable portability warnings -- our automake code (in particular
+ # common.am) uses some constructs specific to gmake.
+diff --git a/lib/subdir.am b/lib/subdir.am
+index 7d85b7a..35a9f43 100644
+--- a/lib/subdir.am
++++ b/lib/subdir.am
+@@ -221,8 +221,6 @@ noinst_PROGRAMS += \
+ if BUILD_CLIPPY
+ noinst_PROGRAMS += lib/clippy
+ else
+-$(HOSTTOOLS)lib/clippy:
+-	@$(MAKE) -C $(top_builddir)/$(HOSTTOOLS) lib/route_types.h lib/clippy
+ endif
+ 
+ lib_grammar_sandbox_SOURCES = \
+@@ -230,6 +228,7 @@ lib_grammar_sandbox_SOURCES = \
+ lib_grammar_sandbox_LDADD = \
+ 	lib/libfrr.la
+ 
++if BUILD_CLIPPY
+ lib_clippy_CPPFLAGS = $(AM_CPPFLAGS) -D_GNU_SOURCE
+ lib_clippy_CFLAGS = $(PYTHON_CFLAGS)
+ lib_clippy_LDADD = $(PYTHON_LIBS)
+@@ -244,7 +243,7 @@ lib_clippy_SOURCES = \
+ 	lib/memory.c \
+ 	lib/vector.c \
+ 	# end
+-
++endif
+ 
+ #
+ # generated sources & extra foo
+--- frr/common.am.orig	2017-12-01 20:50:01.969824049 +0100
++++ frr/common.am	2018-03-12 04:04:42.986950483 +0100
+@@ -8,12 +8,11 @@
+ am__v_CLIPPY_0 = @echo "  CLIPPY  " $@;
+ am__v_CLIPPY_1 =
+ 
+-CLIPPY_DEPS = $(HOSTTOOLS)lib/clippy $(top_srcdir)/python/clidef.py
++CLIPPY_DEPS = $(top_srcdir)/python/clidef.py
+ 
+ SUFFIXES = _clippy.c .proto .pb-c.c .pb-c.h .pb.h
+ .c_clippy.c:
+-	@{ test -x $(top_builddir)/$(HOSTTOOLS)lib/clippy || $(MAKE) -C $(top_builddir)/$(HOSTTOOLS) lib/clippy; }
+-	$(AM_V_CLIPPY)$(top_builddir)/$(HOSTTOOLS)lib/clippy $(top_srcdir)/python/clidef.py -o $@ $<
++	$(AM_V_CLIPPY)$(HOSTTOOLS)lib/clippy $(top_srcdir)/python/clidef.py -o $@ $<
+ 
+ ## automake's "ylwrap" is a great piece of GNU software... not. 
+ .l.c:

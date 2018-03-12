@@ -34,7 +34,17 @@ PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 PKG_LICENSE:=GPL-2.0
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
+
+BUILD_PATH=build
+MAKE_PATH=$(BUILD_PATH)
+CONFIGURE_CMD=../configure
+
+define Build/Configure
+	mkdir -p $(PKG_BUILD_DIR)/$(MAKE_PATH)
+	$(call Build/Configure/Default,,,$(MAKE_PATH))
+endef
 
 define Package/frr/Default
   SECTION:=net
@@ -193,6 +203,24 @@ CONFIG_PACKAGE_frr-ripngd:=m
 CONFIG_PACKAGE_frr-vtysh:=m
 endif
 
+HOST_CONFIGURE_ARGS+= \
+	--enable-clippy-only \
+	--disable-ospfclient \
+	--disable-capabilities \
+	--disable-doc \
+	--disable-zebra \
+	--disable-bgpd \
+	--disable-eigrpd \
+	--disable-ldpd \
+	--disable-isisd \
+	--disable-ospfd \
+	--disable-ospf6d \
+	--disable-pimd \
+	--disable-ripd \
+	--disable-ripngd \
+	--disable-nhrpd \
+	--disable-vtysh
+
 CONFIGURE_ARGS+= \
 	--host="$(GNU_TARGET_NAME)" \
 	CFLAGS="$(TARGET_CFLAGS)" \
@@ -210,6 +238,7 @@ CONFIGURE_ARGS+= \
 	--disable-ospfclient \
 	--disable-capabilities \
 	--disable-doc \
+	--with-host-tools=$(STAGING_DIR_HOSTPKG)/lib/$(PKG_NAME)-$(PKG_VERSION)/ \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-libfrr,zebra) \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-bgpd,bgpd) \
 	$(call autoconf_bool,CONFIG_PACKAGE_frr-ldpd,ldpd) \
@@ -332,6 +361,16 @@ define Package/frr-libfrr/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfrr.so.* $(1)/usr/lib/
 endef
 
+define Host/Compile
+  $(call Host/Compile/Default,lib/clippy)
+endef
+
+define Host/Install
+	mkdir -p $(STAGING_DIR_HOSTPKG)/lib/$(PKG_NAME)-$(PKG_VERSION)/lib/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/lib/clippy $(STAGING_DIR_HOSTPKG)/lib/$(PKG_NAME)-$(PKG_VERSION)/lib/
+endef
+
+$(eval $(call HostBuild))
 $(eval $(call BuildPackage,frr))
 $(eval $(call BuildPackage,frr-libfrr))
 $(eval $(call BuildPackage,frr-watchfrr))
