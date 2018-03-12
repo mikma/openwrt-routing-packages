@@ -31,7 +31,7 @@ RUNUSER=network
 RUNGROUP=$RUNUSER
 DAEMONS="zebra bgpd ldpd isisd nhrpd ospfd ospf6d pimd ripd ripngd"
 DAEMON_FLAGS=-d
-WATCHFRR_FLAGS="-d -z -T 60 -R"
+WATCHFRR_FLAGS="-d -T 60"
 WATCHFRR_CMD="$0 watchrestart"
 if [ ${COMMAND} != "watchrestart" -a -x "${BINDIR}/watchfrr" ]
 then
