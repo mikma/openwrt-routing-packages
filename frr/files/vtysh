@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export VTYSH_PAGER="less -E -~"
+
+exec vtysh.real "$@"

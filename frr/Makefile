@@ -350,7 +350,8 @@ endef
 
 define Package/frr-vtysh/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vtysh $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vtysh $(1)/usr/bin/vtysh.real
+	$(INSTALL_BIN) ./files/vtysh $(1)/usr/bin/vtysh
 	$(INSTALL_DIR) $(1)/etc/frr
 	chmod 0750 $(1)/etc/frr
 	$(INSTALL_CONF) ./files/vtysh.conf $(1)/etc/frr/
